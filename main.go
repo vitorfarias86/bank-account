@@ -1,21 +1,25 @@
 package main
 
 import (
+	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 
 	"github.com/gorilla/mux"
 	"github.com/vitorfarias86/bank-account/db"
+	"github.com/vitorfarias86/bank-account/factory"
+	"github.com/vitorfarias86/bank-account/model"
 )
 
 func main() {
 
-	var database db.Database = db.Database{}
+	database := db.Database{Data: make(map[string]int)}
 
 	router := mux.NewRouter()
 	router.HandleFunc("/reset", ResetData(&database)).Methods("POST")
-	router.HandleFunc("/balance/{account_id}", GetBalance).Methods("GET")
-	router.HandleFunc("/event", CreateEvent).Methods("POST")
+	router.HandleFunc("/balance/{account-id}", GetBalance(&database)).Methods("GET")
+	router.HandleFunc("/event", HandleEvent(&database)).Methods("POST")
 
 	log.Fatal(http.ListenAndServe(":8000", router))
 }
@@ -25,11 +29,39 @@ func ResetData(database *db.Database) http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		database.Initialize()
+		fmt.Fprintf(w, fmt.Sprintf("%d %s", http.StatusOK, http.StatusText(http.StatusOK)))
 	}
 }
 
 //GetBalance get balance
-func GetBalance(w http.ResponseWriter, r *http.Request) {}
+func GetBalance(database *db.Database) http.HandlerFunc {
 
-//CreateEvent create an event if the account doesn't exists create a new one
-func CreateEvent(w http.ResponseWriter, r *http.Request) {}
+	return func(w http.ResponseWriter, r *http.Request) {
+		params := mux.Vars(r)
+
+		balance, err := database.GetBalance(params["account-id"])
+		status := http.StatusOK
+		if err != nil {
+			status = http.StatusNotFound
+			http.Error(w, "", http.StatusNotFound)
+		}
+		fmt.Fprintf(w, fmt.Sprintf("%d %d", status, balance))
+	}
+}
+
+//HandleEvent handle all events
+func HandleEvent(database *db.Database) http.HandlerFunc {
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		var event model.Event
+
+		err := json.NewDecoder(r.Body).Decode(&event)
+
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		}
+		factory.Command[event.Type].Handle(&event, database)
+		w.WriteHeader(http.StatusCreated)
+
+	}
+}
