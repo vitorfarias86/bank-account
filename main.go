@@ -18,7 +18,7 @@ func main() {
 
 	router := mux.NewRouter()
 	router.HandleFunc("/reset", ResetData(&database)).Methods("POST")
-	router.HandleFunc("/balance/{account-id}", GetBalance(&database)).Methods("GET")
+	router.HandleFunc("/balance", GetBalance(&database)).Methods("GET")
 	router.HandleFunc("/event", HandleEvent(&database)).Methods("POST")
 
 	log.Fatal(http.ListenAndServe(":8000", router))
@@ -37,9 +37,9 @@ func ResetData(database *db.Database) http.HandlerFunc {
 func GetBalance(database *db.Database) http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		params := mux.Vars(r)
-
-		balance, err := database.GetBalance(params["account-id"])
+		accountID := r.URL.Query().Get("account_id")
+		fmt.Printf("#v", accountID)
+		balance, err := database.GetBalance(accountID)
 		status := http.StatusOK
 		if err != nil {
 			status = http.StatusNotFound
@@ -60,8 +60,18 @@ func HandleEvent(database *db.Database) http.HandlerFunc {
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 		}
-		factory.Command[event.Type].Handle(&event, database)
-		w.WriteHeader(http.StatusCreated)
+		response, err := factory.Command[event.Type].Handle(&event, database)
+		status := http.StatusCreated
+		if err != nil {
+			status = http.StatusNotFound
+			http.Error(w, "", http.StatusNotFound)
+			fmt.Fprintf(w, fmt.Sprintf("%d %s", status, "0"))
+		} else {
+			b, _ := json.Marshal(response)
+
+			fmt.Fprintf(w, fmt.Sprintf("%d %s", status, string(b)))
+			w.WriteHeader(status)
+		}
 
 	}
 }

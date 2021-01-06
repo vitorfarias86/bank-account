@@ -7,5 +7,5 @@ import (
 
 //EventStrategy interface
 type EventStrategy interface {
-	Handle(evt *model.Event, db *db.Database)
+	Handle(evt *model.Event, db *db.Database) (model.Response, error)
 }

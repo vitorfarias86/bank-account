@@ -32,8 +32,8 @@ func (d *Database) GetBalance(accountID string) (int, error) {
 	return balance, nil
 }
 
-//Deposit func
-func (d *Database) Deposit(evt *model.Event) {
+//Deposit func - do the deposit and returns the new balance
+func (d *Database) Deposit(evt *model.Event) int {
 
 	accountCreated := d.CreateAccount(evt.Destination)
 	if accountCreated {
@@ -41,6 +41,8 @@ func (d *Database) Deposit(evt *model.Event) {
 	}
 	actualBalance, _ := d.GetBalance(evt.Destination)
 	d.Data[evt.Destination] = actualBalance + evt.Amount
+
+	return d.Data[evt.Destination]
 }
 
 //CreateAccount func
@@ -58,4 +60,17 @@ func (d *Database) CreateAccount(accountID string) bool {
 func (d *Database) AccountExist(accountID string) bool {
 	_, exist := d.Data[accountID]
 	return exist
+}
+
+//Withdraw func
+func (d *Database) Withdraw(evt *model.Event) (int, error) {
+
+	accountExist := d.AccountExist(evt.Destination)
+	if !accountExist {
+		return 0, fmt.Errorf("Account %s does not exist", evt.Destination)
+	}
+
+	d.Data[evt.Destination] -= evt.Amount
+
+	return d.Data[evt.Destination], nil
 }
