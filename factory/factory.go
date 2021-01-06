@@ -6,7 +6,7 @@ import (
 )
 
 //Command variable
-var Command map[string]strategy.EventStrategy = map[string]strategy.EventStrategy{"deposit": &strategy.Deposit{}, "withdraw": &strategy.Withdraw{}}
+var Command map[string]strategy.EventStrategy = map[string]strategy.EventStrategy{"deposit": &strategy.Deposit{}, "withdraw": &strategy.Withdraw{}, "transfer": &strategy.Transfer{}}
 
 //Factory func
 func Factory(event model.Event) strategy.EventStrategy {

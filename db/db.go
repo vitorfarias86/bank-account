@@ -65,12 +65,25 @@ func (d *Database) AccountExist(accountID string) bool {
 //Withdraw func
 func (d *Database) Withdraw(evt *model.Event) (int, error) {
 
-	accountExist := d.AccountExist(evt.Destination)
+	accountExist := d.AccountExist(evt.Origin)
 	if !accountExist {
-		return 0, fmt.Errorf("Account %s does not exist", evt.Destination)
+		return 0, fmt.Errorf("Account %s does not exist", evt.Origin)
 	}
 
-	d.Data[evt.Destination] -= evt.Amount
+	d.Data[evt.Origin] -= evt.Amount
 
-	return d.Data[evt.Destination], nil
+	return d.Data[evt.Origin], nil
+}
+
+//Transfer func
+func (d *Database) Transfer(evt *model.Event) error {
+
+	balance, _ := d.GetBalance(evt.Origin)
+	if evt.Amount > balance {
+		return fmt.Errorf("Account %s does not have suficient amount for this transaction", evt.Origin)
+	}
+	d.Withdraw(evt)
+	d.Deposit(evt)
+
+	return nil
 }

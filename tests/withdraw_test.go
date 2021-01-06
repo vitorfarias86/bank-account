@@ -24,7 +24,7 @@ func TestWithdraw(t *testing.T) {
 		eventDeposit := model.Event{Type: "deposit", Destination: "100", Amount: 10}
 		factory.Command[eventDeposit.Type].Handle(&eventDeposit, &dao)
 
-		event := model.Event{Type: "withdraw", Destination: "100", Amount: 5}
+		event := model.Event{Type: "withdraw", Origin: "100", Amount: 5}
 		result, _ := factory.Command[event.Type].Handle(&event, &dao)
 
 		actualOrigin := result.Origin.ID

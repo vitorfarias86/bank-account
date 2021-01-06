@@ -15,6 +15,6 @@ func (f *Withdraw) Handle(evt *model.Event, db *db.Database) (model.Response, er
 	if err != nil {
 		return model.Response{}, err
 	}
-	var response = model.Response{Origin: &model.ResponseBody{ID: evt.Destination, Balance: balance}}
+	var response = model.Response{Origin: &model.ResponseBody{ID: evt.Origin, Balance: balance}}
 	return response, nil
 }

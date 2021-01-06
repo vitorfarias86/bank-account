@@ -29,7 +29,7 @@ func ResetData(database *db.Database) http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		database.Initialize()
-		fmt.Fprintf(w, fmt.Sprintf("%d %s", http.StatusOK, http.StatusText(http.StatusOK)))
+		fmt.Fprintf(w, fmt.Sprintf("%s", http.StatusText(http.StatusOK)))
 	}
 }
 
@@ -40,12 +40,10 @@ func GetBalance(database *db.Database) http.HandlerFunc {
 		accountID := r.URL.Query().Get("account_id")
 		fmt.Printf("#v", accountID)
 		balance, err := database.GetBalance(accountID)
-		status := http.StatusOK
 		if err != nil {
-			status = http.StatusNotFound
 			http.Error(w, "", http.StatusNotFound)
 		}
-		fmt.Fprintf(w, fmt.Sprintf("%d %d", status, balance))
+		fmt.Fprintf(w, fmt.Sprintf("%d", balance))
 	}
 }
 
@@ -61,17 +59,15 @@ func HandleEvent(database *db.Database) http.HandlerFunc {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 		}
 		response, err := factory.Command[event.Type].Handle(&event, database)
-		status := http.StatusCreated
+
 		if err != nil {
-			status = http.StatusNotFound
-			http.Error(w, "", http.StatusNotFound)
-			fmt.Fprintf(w, fmt.Sprintf("%d %s", status, "0"))
+			w.WriteHeader(http.StatusNotFound)
+			fmt.Fprintf(w, fmt.Sprintf("%d", 0))
 		} else {
 			b, _ := json.Marshal(response)
+			w.WriteHeader(http.StatusCreated)
+			fmt.Fprintf(w, fmt.Sprintf("%s", string(b)))
 
-			fmt.Fprintf(w, fmt.Sprintf("%d %s", status, string(b)))
-			w.WriteHeader(status)
 		}
-
 	}
 }
