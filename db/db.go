@@ -14,7 +14,7 @@ type Database struct {
 //Initialize reset the db
 func (d *Database) Initialize() *Database {
 
-	d = &Database{Data: make(map[string]int)}
+	*d = Database{Data: make(map[string]int)}
 
 	return d
 }
